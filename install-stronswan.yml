@@ -1,0 +1,9 @@
+---
+- hosts:
+    - all
+  roles:
+    - "install-repo-epel"
+    - "install-strongswan"
+    - "install-firewall"
+  become: yes
+#    - install-firewall

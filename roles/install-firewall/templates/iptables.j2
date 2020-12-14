@@ -1,0 +1,65 @@
+{% if synproxy%}
+# Generated with synproxy
+*raw
+:PREROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+{% for iface in iptables_ext_if %}
+{% for port in iptables_open_tcp_ports %}
+-A PREROUTING -i {{iface}} -p tcp -m tcp --dport {{port}} --syn -j CT --notrack
+{% endfor %}
+{% endfor %}
+COMMIT
+# Completed on Fri Mar 30 16:01:36 2018
+{% endif %}
+{% if iptables_raw_custom_rules%}
+*raw
+{{iptables_raw_custom_rules}}
+COMMIT
+{% endif %}
+{% if iptables_mangle_custom_rules%}
+*mangle
+{{iptables_mangle_custom_rules}}
+COMMIT
+{% endif %}
+
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+{% if synproxy %}
+{% for iface in iptables_ext_if %}
+{% for port in iptables_open_tcp_ports %}
+-A INPUT -i {{iface}} -p tcp -m tcp --dport {{port}} -m state --state INVALID,UNTRACKED -j SYNPROXY --sack-perm --timestamp --wscale 7 --mss 1460
+{% endfor %}
+{% endfor %}
+-A INPUT -m state --state INVALID -j DROP
+{% endif %}
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+{% for iface in iptables_local_if %}
+{% if iface in ansible_interfaces %}
+-A INPUT -i {{iface}} -j ACCEPT -m comment --comment "iptables_local_if"
+{% endif %}
+{% endfor %}
+-A INPUT -p tcp --dport 22 -j ACCEPT -m comment --comment "ssh"
+{% if iptables_custom_rules%}
+{%for rule in iptables_custom_rules%}
+{{rule}}
+{% endfor %}
+{% endif %}
+{% for port in iptables_open_udp_ports %}
+-A INPUT -p udp --dport {{port}} -j ACCEPT -m comment --comment "iptables_open_udp_ports"
+{% endfor %}
+{% for port in iptables_open_tcp_ports %}
+-A INPUT -p tcp -m state --state NEW -m tcp --dport {{port}} -j ACCEPT -m comment --comment "iptables_open_tcp_ports"
+{% endfor %}
+{% for ip in iptables_prometheus_servers %}
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 9913 -s {{ip}} -j ACCEPT -m comment --comment "prometheus"
+{% endfor %}
+{% for ip in iptables_zabbix_servers %}
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 10050 -s {{ip}} -j ACCEPT -m comment --comment "zabbix"
+{% endfor %}
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT

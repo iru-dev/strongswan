@@ -1,0 +1,88 @@
+---
+prepackages:
+#  - bind
+  - htop
+  - mc
+  - rsync
+  - haveged
+  - bind-utils
+  - irqbalance
+  - ntp
+  - iftop
+  - libselinux-python
+  - ncdu
+  - python-keyczar
+  - wget
+  - bzip2
+  - vim
+  - bash-completion
+  - yum-utils
+  - net-tools
+  - psmisc
+  - pciutils
+  - unzip
+  - screen
+  - mtr
+  - telnet
+  - fping
+  - ccze
+  - strace
+  - perf
+  - anacron
+  - cronie
+  - traceroute
+
+prepackages8:
+  - htop
+  - mc
+  - rsync
+  - haveged
+  - bind-utils
+  - irqbalance
+  - chrony
+  - iftop
+  - python3-libselinux
+  - ncdu
+  #  - python-keyczar
+  - wget
+  - bzip2
+  - vim
+  - bash-completion
+  - yum-utils
+  - net-tools
+  - psmisc
+  - pciutils
+  - unzip
+  - screen
+  - mtr
+  - telnet
+  - fping
+  #  - ccze
+  - strace
+  - perf
+  - anacron
+  - cronie
+  - traceroute
+  - glibc-locale-source
+
+predaemons:
+#  - name: named
+#    enabled: yes
+  - name: haveged
+    enabled: yes
+  - name: irqbalance
+    enabled: yes
+  - name: ntpd
+    enabled: yes
+  - name: crond
+    enabled: yes
+
+predaemons8:
+  - name: haveged
+    enabled: yes
+  - name: irqbalance
+    enabled: yes
+  - name: chronyd
+    enabled: yes
+  - name: crond
+    enabled: yes

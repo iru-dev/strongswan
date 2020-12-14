@@ -1,0 +1,14 @@
+just_installed: false
+iptables_local_if: [eth1]
+iptables_ext_if: ["{{ ansible_default_ipv4.interface }}"]
+iptables_open_tcp_ports:
+  - 80
+  - 443
+iptables_open_udp_ports: []
+synproxy: false
+iptables_raw_custom_rules: false
+iptables_mangle_custom_rules: false
+iptables_custom_rules: false
+
+iptables_prometheus_servers: []
+iptables_zabbix_servers: []

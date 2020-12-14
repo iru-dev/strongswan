@@ -1,0 +1,2 @@
+iptables_open_tcp_ports: [443]
+iptables_open_udp_ports: [ 500, 4500 ]

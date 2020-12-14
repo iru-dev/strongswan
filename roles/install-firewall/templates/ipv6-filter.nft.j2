@@ -1,0 +1,19 @@
+#!/usr/sbin/nft -f
+table ip6 filter { # handle 40
+	chain INPUT { # handle 1
+		type filter hook input priority 0; policy accept;
+		ct state related,established counter accept # handle 4
+		meta l4proto ipv6-icmp counter accept # handle 5
+		iifname "lo" counter accept # handle 6
+		ct state new tcp dport 40022 counter accept # handle 8
+		ip6 daddr fe80::/64 udp dport 546 ct state new counter accept # handle 9
+	}
+
+	chain FORWARD { # handle 2
+		type filter hook forward priority 0; policy accept;
+	}
+
+	chain OUTPUT { # handle 3
+		type filter hook output priority 0; policy accept;
+	}
+}

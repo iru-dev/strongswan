@@ -1,0 +1,34 @@
+#!/usr/sbin/nft -f
+table ip filter {
+	chain INPUT {
+		type filter hook input priority 0; policy accept;
+		ct state related,established counter accept
+		meta l4proto icmp counter accept
+		iifname "lo" counter accept
+{% for iface in iptables_local_if %}
+{% if iface in ansible_interfaces %}
+		iifname "{{ iface }}" accept comment nftables_local
+{% endif %}
+{% endfor %}
+{% for port in iptables_open_tcp_ports %}
+		tcp dport {{ port }} counter accept comment "{{ port }}"
+{% endfor %}
+		tcp dport 22 counter accept comment ssh
+
+{% for ip in iptables_prometheus_servers %}
+		ip saddr {{ip}} ct state new tcp dport 9913 counter accept comment prometheus
+{% endfor %}
+{% for ip in iptables_zabbix_servers %}
+		ip saddr {{ip}} ct state new tcp dport 10050 counter accept comment zabbix-agent
+{% endfor %}
+
+	}
+
+	chain FORWARD {
+		type filter hook forward priority 0; policy accept;
+	}
+
+	chain OUTPUT {
+		type filter hook output priority 0; policy accept;
+	}
+}

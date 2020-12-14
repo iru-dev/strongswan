@@ -1,0 +1,103 @@
+---
+- block:
+    - name: firewalld off
+      service:
+        name=firewalld
+        state=stopped
+        enabled=no
+      ignore_errors: yes
+
+    - name: inst libselinux-python Centos7
+      yum: name="libselinux-python" state=present
+      when: ansible_distribution_major_version == "7"
+
+    - name: inst libselinux-python Centos8
+      yum: name="python3-libselinux" state=present
+      when: ansible_distribution_major_version == "8"
+
+    - name: Disable SELinux
+      selinux: policy=targeted state=permissive
+      ignore_errors: yes
+
+    - block:
+        - name: install iptables
+          yum:
+            pkg=iptables state=present
+
+        - name: install ip6tables
+          yum:
+            pkg=iptables-ipv6 state=present
+
+        - name: iptables on
+          shell: chkconfig iptables on
+
+        - name: ip6tables on
+          shell: chkconfig ip6tables on
+
+        - name: copy iptables config
+          template:
+            src: "iptables.j2"
+            dest: "/etc/sysconfig/iptables"
+
+        - name: copy ip6tables config
+          template:
+            src: "ip6tables.j2"
+            dest: "/etc/sysconfig/ip6tables"
+
+        - name: ipset-service install
+          yum:
+            pkg=ipset-service state=present
+          when: (need_ipset == "yes") and (need_ipset is defined)
+
+        - name: ipset-service enable
+          systemd: name=ipset state=restarted enabled=yes
+          when: (need_ipset == "yes") and (need_ipset is defined)
+
+        - service: name=iptables state=reloaded
+
+        - service: name=ip6tables state=restarted
+          ignore_errors: yes
+      when: ansible_distribution_major_version == "7"
+
+    - block:
+        - name: install iptables
+          yum:
+            pkg=iptables state=present
+
+        - name: copy nftables config
+          template:
+            src: "nftables.j2"
+            dest: "/etc/sysconfig/nftables.conf"
+
+        - name: copy ipv4-filter config
+          template:
+            src: "ipv4-filter.nft.j2"
+            dest: "/etc/nftables/ipv4-filter.nft"
+
+        - name: copy ipv6-filter config
+          template:
+            src: "ipv6-filter.nft.j2"
+            dest: "/etc/nftables/ipv6-filter.nft"
+
+        - name: nftables on
+          service:
+            name: nftables
+            state: restarted
+            enabled: yes
+
+      when: ansible_distribution_major_version == "8"
+
+    - block:
+        - name: copy iptables config
+          template:
+            src: "iptables.j2"
+            dest: "/etc/sysconfig/iptables"
+
+        - service: name=iptables-restore state=restarted
+
+      when: ansible_distribution_major_version == "32"
+
+    - service: name=sshd state=reloaded
+
+  tags: [iptables_update]
+  when: (iptables_skip is not defined) or (iptables_skip != "yes")

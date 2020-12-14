@@ -1,0 +1,4 @@
+---
+dir_strong: "/etc/strongswan"
+ipsecDir: "/etc/ipsec.d"
+libSSlDir: "/usr/lib/ssl"

@@ -1,0 +1,10 @@
+########
+ansible.log
+#ansible.cfg
+infrastructure.yml
+roles/requirements.yml
+
+*.swp
+*.DS_Store
+.vagrant
+cache

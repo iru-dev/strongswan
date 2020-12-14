@@ -1,0 +1,99 @@
+---
+
+- name: "install strongswan"
+  tags: install
+  dnf:
+    name: "strongswan"
+    state: present
+
+- name: Disable SELinux
+  tags:
+    - selinux
+  selinux: policy=targeted state=disabled
+  ignore_errors: yes
+
+- name: mkdir
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: root
+    group: root
+  with_items:
+    - "{{ ipsecDir }}"
+    - "{{ libSSlDir }}"
+    - "{{ ipsecDir }}/cacerts"
+    - "{{ ipsecDir }}/csr"
+    - "{{ ipsecDir }}/private"
+
+- name: copy config file ipsec.conf
+  tags: config
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ libSSlDir }}/{{ item }}"
+  with_items:
+    - "openssl.cnf"
+
+- name: copy config file ipsec.conf
+  tags: config
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ dir_strong }}/{{ item }}"
+  with_items:
+    - "ipsec.conf"
+    - "ipsec.secrets"
+
+
+##### Генерация Сертификатов
+- name: "SSL"
+  tags: "ssl"
+  openssl_privatekey:
+    path: "{{ ipsecDir }}/private/strongswanKey.pem"
+    passphrase: ansible
+    cipher: aes256
+
+
+#- name: "generate SSL"
+#  tags: "ssl"
+#  openssl_certificate:
+#    path: "{{ ipsecDir }}/cacerts/strongswanCert.crt"
+#    privatekey_path: "{{ ipsecDir }}/private/strongswanKey.pem"
+#    csr_path: "{{ ipsecDir }}/csr/strongswanCert.csr"
+#    provider: selfsigned
+
+#openssl req -x509 -days 3650 -newkey rsa:2048 -keyout "{{ ipsecDir }}/private/strongswanKey.pem -out "{{ ipsecDir }}/cacerts/strongswanCert.pem
+#openssl pkcs12 -export -inkey "{{ ipsecDir }}/private/strongswanKey.pem -in {{ ipsecDir }}/certs/strongswanCert.pem -name "host" -certfile {{ ipsecDir }}/cacerts/strongswanCert.pem -caname "strongSwan Root CA" -out CAcert.p12
+
+#/* этот сертификат нужно будет импортировать на клиент (например Windows 7)
+
+
+#####
+
+
+
+- sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+
+- sysctl:
+    name: net.ipv4.conf.all.accept_redirects
+    value: 0
+    state: present
+
+- sysctl:
+    name: net.ipv4.conf.all.forwarding
+    value: 1
+    state: present
+    reload: yes
+
+- name: start and enable service
+  tags: systemd,
+  systemd:
+    enabled: yes
+    state: restarted
+    daemon_reload: yes
+    name: strongswan
+
+
+## далее шуруем на роутер и пробрасываем порты, в теории можно и тут запилить
